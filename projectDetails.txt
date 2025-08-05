@@ -1,0 +1,9 @@
+Project req => https://roadmap.sh/projects/expense-tracker-api
+
+ to use => Postgres ( pgAdmin to design DB )
+ ORM to use => GORM
+ Use docker to run postgresDB locally.
+ Implement liquidate.
+Use this web app to design the ERM model for the DB => https://app.diagrams.net/
+
+Docker compose .yml file created base on the official Postgres image in docker hub = https://hub.docker.com/_/postgres
