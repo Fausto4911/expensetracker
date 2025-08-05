@@ -7,3 +7,6 @@ Project req => https://roadmap.sh/projects/expense-tracker-api
 Use this web app to design the ERM model for the DB => https://app.diagrams.net/
 
 Docker compose .yml file created base on the official Postgres image in docker hub = https://hub.docker.com/_/postgres
+
+
+use this as a guide for project structure layout = https://github.com/golang-standards/project-layout
