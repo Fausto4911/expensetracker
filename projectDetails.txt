@@ -10,3 +10,7 @@ Docker compose .yml file created base on the official Postgres image in docker h
 
 
 use this as a guide for project structure layout = https://github.com/golang-standards/project-layout
+
+postgres deiver to use = https://github.com/jackc/pgx "The sql package must be used in conjunction with a database driver."
+
+To work with nullable db columns there are special types in go. If we're talking about pgx driver - https://github.com/jackc/pgtype 
