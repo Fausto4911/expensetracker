@@ -1,43 +1,64 @@
 package service
 
 import (
-	"context"
 	"fmt"
-	"os"
 
 	"github.com/Fausto4911/expensetracker/internal/config"
-	"github.com/jackc/pgx/v5"
-	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/Fausto4911/expensetracker/internal/dto"
+	"github.com/Fausto4911/expensetracker/internal/repository"
 )
 
-type ExpenseService struct {
+type ExpenseService interface {
+	GetExpense(id uint16) dto.Expense
+	// GetAllExpenses() []dto.Expense
+	// CreateExpense(expense dto.Expense) dto.Expense
+	// UpdateExpense(expense dto.Expense) dto.Expense
+	// DeleteExpenseById(id uint16) bool
 }
 
-func (es ExpenseService) GetExpenseById(id uint16) {
-	connUrl := getConnectionUrl(config.ExpenseTrackerDBConfig{DbName: "expensetracker", DbHost: "localhost", DbPort: "5440", DbUser: "user", DbPassword: "admin"})
-	conn, err := pgx.Connect(context.Background(), connUrl)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Unable to connect to database: %v\n", err)
-		os.Exit(1)
-	}
-	defer conn.Close(context.Background())
+type expenseService struct {
+	repo     repository.ExpenseRepository
+	dbConfig config.ExpenseTrackerDBConfig
+}
 
-	var (
-		expenseId  uint16
-		amount     float32
-		categoryId uint16
-		created    pgtype.Timestamptz
-		modified   pgtype.Timestamptz
-	)
+func NewUserService(repo repository.ExpenseRepository, dbConfig config.ExpenseTrackerDBConfig) ExpenseService {
+	return &expenseService{repo: repo, dbConfig: dbConfig}
+}
 
-	query := "select * from expense where id = $1"
-	err = conn.QueryRow(context.Background(), query, id).Scan(&expenseId, &amount, &categoryId, &created, &modified)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "QueryRow failed: %v\n", err)
-		os.Exit(1)
-	}
+func (es expenseService) GetExpense(id uint16) dto.Expense {
+	// connUrl := getConnectionUrl(es.dbConfig)
+	expense := es.repo.GetExpenseById(id)
+	return expense
+	// conn, err := pgx.Connect(context.Background(), connUrl)
+	// if err != nil {
+	// 	fmt.Fprintf(os.Stderr, "Unable to connect to database: %v\n", err)
+	// 	os.Exit(1)
+	// }
+	// defer conn.Close(context.Background())
 
-	fmt.Printf("id : %d | amount : %f | category_id: %d | created: %s | modified: %s", expenseId, amount, categoryId, created, modified)
+	// var (
+	// 	expenseId  uint16
+	// 	amount     float32
+	// 	categoryId uint16
+	// 	created    pgtype.Timestamptz
+	// 	modified   pgtype.Timestamptz
+	// )
+
+	// query := "select * from expense where id = $1"
+	// err = conn.QueryRow(context.Background(), query, id).Scan(&expenseId, &amount, &categoryId, &created, &modified)
+	// if err != nil {
+	// 	fmt.Fprintf(os.Stderr, "QueryRow failed: %v\n", err)
+	// 	os.Exit(1)
+	// }
+
+	// fmt.Printf("id : %d | amount : %f | category_id: %d | created: %s | modified: %s", expenseId, amount, categoryId, created, modified)
+	// expense := dto.Expense{}
+	// expense.SetId(id)
+	// expense.SetAmount(amount)
+	// expense.SetCategoryId(categoryId)
+	// expense.SetCreated(created)
+	// expense.SetModified(modified)
+	// return expense
 }
 
 func getConnectionUrl(conf config.ExpenseTrackerDBConfig) string {

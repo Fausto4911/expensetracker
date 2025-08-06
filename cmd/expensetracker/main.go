@@ -14,6 +14,7 @@ func main() {
 
 	eh := &handler.ExpenseHandler{}
 	http.Handle("/expenses", eh)
+	http.Handle("/expenses/{id}", eh)
 
 	log.Fatal(http.ListenAndServe(":8080", nil))
 
