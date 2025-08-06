@@ -1,15 +1,13 @@
 package service
 
 import (
-	"fmt"
-
 	"github.com/Fausto4911/expensetracker/internal/config"
 	"github.com/Fausto4911/expensetracker/internal/dto"
 	"github.com/Fausto4911/expensetracker/internal/repository"
 )
 
 type ExpenseService interface {
-	GetExpense(id uint16) dto.Expense
+	GetExpense(id uint16) (dto.Expense, error)
 	// GetAllExpenses() []dto.Expense
 	// CreateExpense(expense dto.Expense) dto.Expense
 	// UpdateExpense(expense dto.Expense) dto.Expense
@@ -21,46 +19,14 @@ type expenseService struct {
 	dbConfig config.ExpenseTrackerDBConfig
 }
 
-func NewUserService(repo repository.ExpenseRepository, dbConfig config.ExpenseTrackerDBConfig) ExpenseService {
+func NewExpenseService(repo repository.ExpenseRepository, dbConfig config.ExpenseTrackerDBConfig) ExpenseService {
 	return &expenseService{repo: repo, dbConfig: dbConfig}
 }
 
-func (es expenseService) GetExpense(id uint16) dto.Expense {
-	// connUrl := getConnectionUrl(es.dbConfig)
-	expense := es.repo.GetExpenseById(id)
-	return expense
-	// conn, err := pgx.Connect(context.Background(), connUrl)
-	// if err != nil {
-	// 	fmt.Fprintf(os.Stderr, "Unable to connect to database: %v\n", err)
-	// 	os.Exit(1)
-	// }
-	// defer conn.Close(context.Background())
-
-	// var (
-	// 	expenseId  uint16
-	// 	amount     float32
-	// 	categoryId uint16
-	// 	created    pgtype.Timestamptz
-	// 	modified   pgtype.Timestamptz
-	// )
-
-	// query := "select * from expense where id = $1"
-	// err = conn.QueryRow(context.Background(), query, id).Scan(&expenseId, &amount, &categoryId, &created, &modified)
-	// if err != nil {
-	// 	fmt.Fprintf(os.Stderr, "QueryRow failed: %v\n", err)
-	// 	os.Exit(1)
-	// }
-
-	// fmt.Printf("id : %d | amount : %f | category_id: %d | created: %s | modified: %s", expenseId, amount, categoryId, created, modified)
-	// expense := dto.Expense{}
-	// expense.SetId(id)
-	// expense.SetAmount(amount)
-	// expense.SetCategoryId(categoryId)
-	// expense.SetCreated(created)
-	// expense.SetModified(modified)
-	// return expense
-}
-
-func getConnectionUrl(conf config.ExpenseTrackerDBConfig) string {
-	return fmt.Sprintf("postgres://%s:%s@%s:%s/%s", conf.DbUser, conf.DbPassword, conf.DbHost, conf.DbPort, conf.DbName)
+func (es expenseService) GetExpense(id uint16) (dto.Expense, error) {
+	expense, err := es.repo.GetExpenseById(id)
+	if err != nil {
+		return dto.Expense{}, err
+	}
+	return expense, nil
 }

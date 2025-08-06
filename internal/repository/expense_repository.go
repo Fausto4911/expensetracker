@@ -12,7 +12,7 @@ import (
 )
 
 type ExpenseRepository interface {
-	GetExpenseById(id uint16) dto.Expense
+	GetExpenseById(id uint16) (dto.Expense, error)
 	// GetAllExpenses() []dto.Expense
 	// CreateExpense(expense dto.Expense) dto.Expense
 	// UpdateExpense(expense dto.Expense) dto.Expense
@@ -23,7 +23,7 @@ type expenseRepository struct {
 	dbConfig config.ExpenseTrackerDBConfig
 }
 
-func (r *expenseRepository) GetExpenseById(id uint16) dto.Expense {
+func (r *expenseRepository) GetExpenseById(id uint16) (dto.Expense, error) {
 	connUrl := getConnectionUrl(r.dbConfig)
 	conn, err := pgx.Connect(context.Background(), connUrl)
 	if err != nil {
@@ -44,7 +44,8 @@ func (r *expenseRepository) GetExpenseById(id uint16) dto.Expense {
 	err = conn.QueryRow(context.Background(), query, id).Scan(&expenseId, &amount, &categoryId, &created, &modified)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "QueryRow failed: %v\n", err)
-		os.Exit(1)
+		return dto.Expense{}, err
+		// os.Exit(1)
 	}
 
 	fmt.Printf("id : %d | amount : %f | category_id: %d | created: %s | modified: %s\n", expenseId, amount, categoryId, created, modified)
@@ -54,7 +55,7 @@ func (r *expenseRepository) GetExpenseById(id uint16) dto.Expense {
 	expense.SetCategoryId(categoryId)
 	expense.SetCreated(created)
 	expense.SetModified(modified)
-	return expense
+	return expense, nil
 }
 
 func NewExpenseRepository(dbConfig config.ExpenseTrackerDBConfig) ExpenseRepository {
