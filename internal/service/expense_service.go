@@ -8,7 +8,7 @@ import (
 
 type ExpenseService interface {
 	GetExpense(id uint16) (dto.Expense, error)
-	// GetAllExpenses() []dto.Expense
+	GetAllExpenses() ([]dto.ExpenseResponse, error)
 	// CreateExpense(expense dto.Expense) dto.Expense
 	// UpdateExpense(expense dto.Expense) dto.Expense
 	// DeleteExpenseById(id uint16) bool
@@ -29,4 +29,13 @@ func (es expenseService) GetExpense(id uint16) (dto.Expense, error) {
 		return dto.Expense{}, err
 	}
 	return expense, nil
+}
+
+func (es expenseService) GetAllExpenses() ([]dto.ExpenseResponse, error) {
+	expenses, err := es.repo.GetAllExpenses()
+	if err != nil {
+		return make([]dto.ExpenseResponse, 0), err
+	}
+	return expenses, nil
+
 }
