@@ -28,29 +28,37 @@ type ExpenseHandler struct {
 }
 
 func (eh *ExpenseHandler) GetAllExpenses(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("GetAllExpenses started")
+	eh.Logger.Info("GetAllExpenses - started")
 	dbConfig := config.ExpenseTrackerDBConfig{DbName: "expensetracker", DbHost: "localhost", DbPort: "5440", DbUser: "user", DbPassword: "admin"}
 	repo := repository.NewExpenseRepository(dbConfig)
 	service := service.NewExpenseService(repo, dbConfig)
 	expenses, err := service.GetAllExpenses()
 	if err != nil {
+		eh.Logger.Error(err.Error())
 		http.Error(w, "Error parsing ID ", http.StatusInternalServerError)
 		return
 	}
 	jsonData, err := json.Marshal(expenses)
 	if err != nil {
+		eh.Logger.Error(err.Error())
 		http.Error(w, "Error marshalling JSON:", http.StatusInternalServerError)
 		return
 	}
+	w.Header().Set("Content-Type", "application/json")
 	data, err := w.Write(jsonData)
 	if err != nil {
+		eh.Logger.Error(err.Error())
 		http.Error(w, "Error writing data:", http.StatusInternalServerError)
 		return
 	}
-	fmt.Println("Write response :: ", data)
+
+	w.WriteHeader(http.StatusOK)
+	eh.Logger.Info("GetAllExpenses - ", slog.Int("data", data))
+	eh.Logger.Info("GetAllExpenses - finish")
 }
 
 func (eh *ExpenseHandler) GetExpenseByIdHanlder(w http.ResponseWriter, r *http.Request) {
+	eh.Logger.Info("GetExpenseByIdHanlder started")
 	id := r.PathValue("id")
 	dbConfig := config.ExpenseTrackerDBConfig{DbName: "expensetracker", DbHost: "localhost", DbPort: "5440", DbUser: "user", DbPassword: "admin"}
 	repo := repository.NewExpenseRepository(dbConfig)
@@ -58,32 +66,40 @@ func (eh *ExpenseHandler) GetExpenseByIdHanlder(w http.ResponseWriter, r *http.R
 
 	u, err := strconv.ParseUint(id, 10, 16)
 	if err != nil {
+		eh.Logger.Error(err.Error())
 		http.Error(w, "Error parsing ID ", http.StatusInternalServerError)
 		return
 	}
 	expense, err := service.GetExpense(uint16(u))
 	if err != nil {
+		eh.Logger.Error(err.Error())
 		http.Error(w, "Error getting expense ", http.StatusInternalServerError)
 		return
 	}
 	expenseResponse := dto.BuildExpenseResponse(expense)
 	jsonData, err := json.Marshal(expenseResponse)
 	if err != nil {
+		eh.Logger.Error(err.Error())
 		http.Error(w, "Error marshalling JSON:", http.StatusInternalServerError)
 		return
 	}
+	w.Header().Set("Content-Type", "application/json")
 	data, err := w.Write(jsonData)
 	if err != nil {
+		eh.Logger.Error(err.Error())
 		http.Error(w, "Error writing data:", http.StatusInternalServerError)
 		return
 	}
-	fmt.Println("Write response :: ", data)
+	eh.Logger.Info("GetAllExpenses - ", slog.Int("data", data))
+	eh.Logger.Info("GetExpenseByIdHanlder finish")
 }
 
 // Declare a handler which writes a plain-text response with information about the
 // application status, operating environment and version.
 func (eh *ExpenseHandler) HealthcheckHandler(w http.ResponseWriter, r *http.Request) {
+	eh.Logger.Info("HealthcheckHandler started")
 	fmt.Fprintln(w, "status: available")
 	fmt.Fprintf(w, "environment: %s\n", eh.Config.Env)
 	fmt.Fprintf(w, "version: %s\n", version)
+	eh.Logger.Info("HealthcheckHandler finsh")
 }
