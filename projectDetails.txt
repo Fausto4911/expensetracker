@@ -13,4 +13,7 @@ use this as a guide for project structure layout = https://github.com/golang-sta
 
 postgres deiver to use = https://github.com/jackc/pgx "The sql package must be used in conjunction with a database driver."
 
-To work with nullable db columns there are special types in go. If we're talking about pgx driver - https://github.com/jackc/pgtype 
+To work with nullable db columns there are special types in go. If we're talking about pgx driver - https://github.com/jackc/pgtype.
+
+
+I took some ideas from https://lets-go-further.alexedwards.net/

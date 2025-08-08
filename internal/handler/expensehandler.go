@@ -3,6 +3,7 @@ package handler
 import (
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"strconv"
 
@@ -12,7 +13,18 @@ import (
 	"github.com/Fausto4911/expensetracker/internal/service"
 )
 
+const version = "1.0.0"
+
+// Define a config struct to hold all the configuration settings for our application.
+type Config struct {
+	Port int
+	Env  string
+}
+
+// Define an application struct to hold the dependencies for our HTTP handlers, helpers,and middleware.
 type ExpenseHandler struct {
+	Config Config
+	Logger *slog.Logger
 }
 
 func (eh *ExpenseHandler) GetAllExpenses(w http.ResponseWriter, r *http.Request) {
@@ -66,4 +78,12 @@ func (eh *ExpenseHandler) GetExpenseByIdHanlder(w http.ResponseWriter, r *http.R
 		return
 	}
 	fmt.Println("Write response :: ", data)
+}
+
+// Declare a handler which writes a plain-text response with information about the
+// application status, operating environment and version.
+func (eh *ExpenseHandler) HealthcheckHandler(w http.ResponseWriter, r *http.Request) {
+	fmt.Fprintln(w, "status: available")
+	fmt.Fprintf(w, "environment: %s\n", eh.Config.Env)
+	fmt.Fprintf(w, "version: %s\n", version)
 }
