@@ -14,13 +14,37 @@ import (
 type ExpenseRepository interface {
 	GetExpenseById(id uint16) (dto.Expense, error)
 	GetAllExpenses() ([]dto.ExpenseResponse, error)
-	// CreateExpense(expense dto.Expense) dto.Expense
+	CreateExpense(expense dto.ExpenseResponse) (dto.ExpenseResponse, error)
 	// UpdateExpense(expense dto.Expense) dto.Expense
 	// DeleteExpenseById(id uint16) bool
 }
 
 type expenseRepository struct {
 	dbConfig config.ExpenseTrackerDBConfig
+}
+
+func (r *expenseRepository) CreateExpense(expense dto.ExpenseResponse) (dto.ExpenseResponse, error) {
+	connUrl := getConnectionUrl(r.dbConfig)
+	conn, err := pgx.Connect(context.Background(), connUrl)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Unable to connect to database: %v\n", err)
+		return dto.ExpenseResponse{}, err
+	}
+	defer conn.Close(context.Background())
+	query := `insert into expense (amount, category_id, created) values (@amount, @categoryId, @created)`
+	args := pgx.NamedArgs{
+		"amount":     expense.Amount,
+		"categoryId": expense.Category_id,
+		"created":    expense.Created,
+	}
+
+	_, err2 := conn.Exec(context.Background(), query, args)
+	if err2 != nil {
+		fmt.Fprintf(os.Stderr, "Error running insert: %v\n", err)
+		return dto.ExpenseResponse{}, err
+	}
+	return expense, nil
+
 }
 
 func (r *expenseRepository) GetAllExpenses() ([]dto.ExpenseResponse, error) {

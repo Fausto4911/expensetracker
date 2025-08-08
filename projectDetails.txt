@@ -17,3 +17,5 @@ To work with nullable db columns there are special types in go. If we're talking
 
 
 I took some ideas from https://lets-go-further.alexedwards.net/
+
+I used this page as a guide to learn https://gobyexample.com/json

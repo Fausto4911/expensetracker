@@ -11,6 +11,7 @@ func (eh *ExpenseHandler) Routes() *http.ServeMux {
 	mux.HandleFunc("GET /v1/healthcheck", eh.HealthcheckHandler)
 	mux.HandleFunc("GET /v1/expenses", eh.GetAllExpenses)
 	mux.HandleFunc("GET /v1/expenses/{id}", eh.GetExpenseByIdHanlder) //Go 1.22+ Routing Enhancements approach
+	mux.HandleFunc("POST /v1/expenses", eh.CreateExpenseHandler)
 
 	return mux
 }

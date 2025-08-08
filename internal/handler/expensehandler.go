@@ -3,6 +3,7 @@ package handler
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"log/slog"
 	"net/http"
 	"strconv"
@@ -102,4 +103,34 @@ func (eh *ExpenseHandler) HealthcheckHandler(w http.ResponseWriter, r *http.Requ
 	fmt.Fprintf(w, "environment: %s\n", eh.Config.Env)
 	fmt.Fprintf(w, "version: %s\n", version)
 	eh.Logger.Info("HealthcheckHandler finsh")
+}
+
+func (eh *ExpenseHandler) CreateExpenseHandler(w http.ResponseWriter, r *http.Request) {
+	eh.Logger.Info("CreateExpenseHandler started")
+	dbConfig := config.ExpenseTrackerDBConfig{DbName: "expensetracker", DbHost: "localhost", DbPort: "5440", DbUser: "user", DbPassword: "admin"}
+	repo := repository.NewExpenseRepository(dbConfig)
+	service := service.NewExpenseService(repo, dbConfig)
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		eh.Logger.Error(err.Error())
+		http.Error(w, "Error Reading body", http.StatusInternalServerError)
+		return
+	}
+	expense := dto.ExpenseResponse{}
+	err2 := json.Unmarshal(body, &expense)
+	if err2 != nil {
+		eh.Logger.Error(err2.Error())
+		http.Error(w, "Error while Unmarshal body", http.StatusInternalServerError)
+		return
+	}
+
+	expense, err3 := service.CreateExpense(expense)
+	if err3 != nil {
+		eh.Logger.Error(err3.Error())
+		http.Error(w, "Error while Creating Expense", http.StatusInternalServerError)
+		return
+	}
+	fmt.Printf("Expense :: ==> %s", expense)
+	fmt.Printf("%s", body)
+
 }
