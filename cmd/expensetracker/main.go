@@ -24,29 +24,19 @@ func main() {
 
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
 
-	// Declare an instance of the application struct, containing the config struct and
+	// Declare an instance of the ExpenseHandler struct, containing the config struct and
 	// the logger.
 	app := &handler.ExpenseHandler{
 		Config: cfg,
 		Logger: logger,
 	}
 
-	// eh := &handler.ExpenseHandler{}
-
-	// Declare a new servemux and add a /v1/healthcheck route which dispatches requests
-	// to the healthcheckHandler method (which we will create in a moment).
-	mux := http.NewServeMux()
-
-	mux.HandleFunc("GET /v1/healthcheck", app.HealthcheckHandler)
-	mux.HandleFunc("GET /v1/expenses", app.GetAllExpenses)
-	mux.HandleFunc("GET /v1/expenses/{id}", app.GetExpenseByIdHanlder) //Go 1.22+ Routing Enhancements approach
-
 	// Declare an HTTP server which listens on the port provided in the config struct,
 	// uses the servemux we created above as the handler, has some sensible timeout
 	// settings, and writes any log messages to the structured logger at Error level.
 	srv := &http.Server{
 		Addr:         fmt.Sprintf(":%d", cfg.Port),
-		Handler:      mux,
+		Handler:      app.Routes(),
 		IdleTimeout:  time.Minute,
 		ReadTimeout:  5 * time.Second,
 		WriteTimeout: 10 * time.Second,
