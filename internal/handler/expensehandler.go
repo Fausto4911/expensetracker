@@ -134,3 +134,25 @@ func (eh *ExpenseHandler) CreateExpenseHandler(w http.ResponseWriter, r *http.Re
 	fmt.Printf("%s", body)
 
 }
+
+func (eh *ExpenseHandler) DeleteExpense(w http.ResponseWriter, r *http.Request) {
+	eh.Logger.Info("DeleteExpense started")
+	id := r.PathValue("id")
+	dbConfig := config.ExpenseTrackerDBConfig{DbName: "expensetracker", DbHost: "localhost", DbPort: "5440", DbUser: "user", DbPassword: "admin"}
+	repo := repository.NewExpenseRepository(dbConfig)
+	service := service.NewExpenseService(repo, dbConfig)
+
+	u, err := strconv.ParseUint(id, 10, 16)
+	if err != nil {
+		eh.Logger.Error(err.Error())
+		http.Error(w, "Error parsing ID ", http.StatusInternalServerError)
+		return
+	}
+	err2 := service.DeleteExpenseById(uint16(u))
+	if err != nil {
+		eh.Logger.Error(err2.Error())
+		http.Error(w, "Error while Creating Expense", http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+}

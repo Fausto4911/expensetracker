@@ -16,7 +16,7 @@ type ExpenseRepository interface {
 	GetAllExpenses() ([]dto.ExpenseResponse, error)
 	CreateExpense(expense dto.ExpenseResponse) (dto.ExpenseResponse, error)
 	// UpdateExpense(expense dto.Expense) dto.Expense
-	// DeleteExpenseById(id uint16) bool
+	DeleteExpenseById(id uint16) error
 }
 
 type expenseRepository struct {
@@ -102,6 +102,24 @@ func (r *expenseRepository) GetExpenseById(id uint16) (dto.Expense, error) {
 	expense.SetCreated(created)
 	expense.SetModified(modified)
 	return expense, nil
+}
+
+func (r *expenseRepository) DeleteExpenseById(id uint16) error {
+	connUrl := getConnectionUrl(r.dbConfig)
+	conn, err := pgx.Connect(context.Background(), connUrl)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Unable to connect to database: %v\n", err)
+		return err
+	}
+	defer conn.Close(context.Background())
+	query := "delete from expense where id = $1"
+
+	res, err := conn.Exec(context.Background(), query, id)
+	if err != nil {
+		return err
+	}
+	fmt.Println(res)
+	return nil
 }
 
 func NewExpenseRepository(dbConfig config.ExpenseTrackerDBConfig) ExpenseRepository {
