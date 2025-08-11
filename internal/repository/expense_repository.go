@@ -15,7 +15,7 @@ type ExpenseRepository interface {
 	GetExpenseById(id uint16) (dto.Expense, error)
 	GetAllExpenses() ([]dto.ExpenseResponse, error)
 	CreateExpense(expense dto.ExpenseResponse) (dto.ExpenseResponse, error)
-	// UpdateExpense(expense dto.Expense) dto.Expense
+	UpdateExpense(expense dto.ExpenseResponse) (dto.ExpenseResponse, error)
 	DeleteExpenseById(id uint16) error
 }
 
@@ -41,7 +41,7 @@ func (r *expenseRepository) CreateExpense(expense dto.ExpenseResponse) (dto.Expe
 	_, err2 := conn.Exec(context.Background(), query, args)
 	if err2 != nil {
 		fmt.Fprintf(os.Stderr, "Error running insert: %v\n", err)
-		return dto.ExpenseResponse{}, err
+		return dto.ExpenseResponse{}, err2
 	}
 	return expense, nil
 
@@ -120,6 +120,30 @@ func (r *expenseRepository) DeleteExpenseById(id uint16) error {
 	}
 	fmt.Println(res)
 	return nil
+}
+
+func (r *expenseRepository) UpdateExpense(expense dto.ExpenseResponse) (dto.ExpenseResponse, error) {
+	connUrl := getConnectionUrl(r.dbConfig)
+	conn, err := pgx.Connect(context.Background(), connUrl)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Unable to connect to database: %v\n", err)
+		return dto.ExpenseResponse{}, err
+	}
+	defer conn.Close(context.Background())
+	query := `update expense set amount = @amount, category_id = @categoryId, modified = now()::timestamp where id = @id`
+	args := pgx.NamedArgs{
+		"amount":     expense.Amount,
+		"categoryId": expense.Category_id,
+		"created":    expense.Created,
+		"id":         expense.Id,
+	}
+
+	_, err2 := conn.Exec(context.Background(), query, args)
+	if err2 != nil {
+		fmt.Fprintf(os.Stderr, "Error running update: %v\n", err2)
+		return dto.ExpenseResponse{}, err2
+	}
+	return expense, nil
 }
 
 func NewExpenseRepository(dbConfig config.ExpenseTrackerDBConfig) ExpenseRepository {

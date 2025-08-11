@@ -10,7 +10,7 @@ type ExpenseService interface {
 	GetExpense(id uint16) (dto.Expense, error)
 	GetAllExpenses() ([]dto.ExpenseResponse, error)
 	CreateExpense(expense dto.ExpenseResponse) (dto.ExpenseResponse, error)
-	// UpdateExpense(expense dto.Expense) dto.Expense
+	UpdateExpense(expense dto.ExpenseResponse) (dto.ExpenseResponse, error)
 	DeleteExpenseById(id uint16) error
 }
 
@@ -55,4 +55,12 @@ func (es expenseService) DeleteExpenseById(id uint16) error {
 	}
 	return nil
 
+}
+
+func (es expenseService) UpdateExpense(expense dto.ExpenseResponse) (dto.ExpenseResponse, error) {
+	expense, err := es.repo.UpdateExpense(expense)
+	if err != nil {
+		return dto.ExpenseResponse{}, err
+	}
+	return expense, nil
 }
