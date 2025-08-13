@@ -61,6 +61,8 @@ func (eh *ExpenseHandler) GetAllExpenses(w http.ResponseWriter, r *http.Request)
 func (eh *ExpenseHandler) GetExpenseByIdHanlder(w http.ResponseWriter, r *http.Request) {
 	eh.Logger.Info("GetExpenseByIdHanlder started")
 	id := r.PathValue("id")
+	eh.Logger.Info(fmt.Sprintf("GetExpenseByIdHanlder id ==> %v", id))
+	eh.Logger.Info(r.URL.Path)
 	dbConfig := config.ExpenseTrackerDBConfig{DbName: "expensetracker", DbHost: "localhost", DbPort: "5440", DbUser: "user", DbPassword: "admin"}
 	repo := repository.NewExpenseRepository(dbConfig)
 	service := service.NewExpenseService(repo, dbConfig)
