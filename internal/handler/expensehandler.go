@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -12,6 +13,7 @@ import (
 	"github.com/Fausto4911/expensetracker/internal/dto"
 	"github.com/Fausto4911/expensetracker/internal/repository"
 	"github.com/Fausto4911/expensetracker/internal/service"
+	"github.com/jackc/pgx/v5"
 )
 
 const version = "1.0.0"
@@ -70,11 +72,17 @@ func (eh *ExpenseHandler) GetExpenseByIdHanlder(w http.ResponseWriter, r *http.R
 	u, err := strconv.ParseUint(id, 10, 16)
 	if err != nil {
 		eh.Logger.Error(err.Error())
-		http.Error(w, "Error parsing ID ", http.StatusInternalServerError)
+		http.Error(w, "Wrong id format ", http.StatusBadRequest)
 		return
 	}
 	expense, err := service.GetExpense(uint16(u))
 	if err != nil {
+		if err == sql.ErrNoRows || err == pgx.ErrNoRows {
+			errString := fmt.Sprintf("No data found for id : %v", uint16(u))
+			eh.Logger.Error(errString)
+			http.Error(w, errString, http.StatusNotFound)
+			return
+		}
 		eh.Logger.Error(err.Error())
 		http.Error(w, "Error getting expense ", http.StatusInternalServerError)
 		return

@@ -11,14 +11,17 @@ import (
 )
 
 func TestGetExpenseByIdHanlder(t *testing.T) {
-	app := &handler.ExpenseHandler{
-		Config: handler.Config{
-			Port: 8080,
-			Env:  "development",
-		},
-		Logger: slog.New(slog.NewTextHandler(os.Stdout, nil)),
-	}
+	app := NewTestApp()
 
+	idExistTest(app, t)
+
+	invalidIdtest(app, t)
+
+	idNotFoundTest(app, t)
+
+}
+
+func idExistTest(app *handler.ExpenseHandler, t *testing.T) {
 	req := httptest.NewRequest(http.MethodGet, "/v1/expenses/4", nil)
 
 	rr := httptest.NewRecorder()
@@ -33,4 +36,49 @@ func TestGetExpenseByIdHanlder(t *testing.T) {
 		t.Errorf("handler returned wrong status code: got %v want %v",
 			status, http.StatusOK)
 	}
+}
+
+func invalidIdtest(app *handler.ExpenseHandler, t *testing.T) {
+	req := httptest.NewRequest(http.MethodGet, "/v1/expenses/non_int_id", nil)
+
+	rr := httptest.NewRecorder()
+
+	mux := http.NewServeMux()
+
+	mux.HandleFunc("GET /v1/expenses/{id}", app.GetExpenseByIdHanlder)
+
+	mux.ServeHTTP(rr, req)
+
+	if status := rr.Code; status != http.StatusBadRequest {
+		t.Errorf("handler returned wrong status code: got %v want %v",
+			status, http.StatusBadRequest)
+	}
+}
+
+func idNotFoundTest(app *handler.ExpenseHandler, t *testing.T) {
+	req := httptest.NewRequest(http.MethodGet, "/v1/expenses/0000", nil)
+
+	rr := httptest.NewRecorder()
+
+	mux := http.NewServeMux()
+
+	mux.HandleFunc("GET /v1/expenses/{id}", app.GetExpenseByIdHanlder)
+
+	mux.ServeHTTP(rr, req)
+
+	if status := rr.Code; status != http.StatusNotFound {
+		t.Errorf("handler returned wrong status code: got %v want %v",
+			status, http.StatusNotFound)
+	}
+}
+
+func NewTestApp() *handler.ExpenseHandler {
+	app := &handler.ExpenseHandler{
+		Config: handler.Config{
+			Port: 8080,
+			Env:  "development",
+		},
+		Logger: slog.New(slog.NewTextHandler(os.Stdout, nil)),
+	}
+	return app
 }
