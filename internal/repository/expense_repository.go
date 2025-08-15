@@ -13,9 +13,9 @@ import (
 
 type ExpenseRepository interface {
 	GetExpenseById(id uint16) (dto.Expense, error)
-	GetAllExpenses() ([]dto.ExpenseResponse, error)
-	CreateExpense(expense dto.ExpenseResponse) (dto.ExpenseResponse, error)
-	UpdateExpense(expense dto.ExpenseResponse) (dto.ExpenseResponse, error)
+	GetAllExpenses() ([]dto.Expense, error)
+	CreateExpense(expense dto.Expense) (dto.Expense, error)
+	UpdateExpense(expense dto.Expense) (dto.Expense, error)
 	DeleteExpenseById(id uint16) error
 }
 
@@ -23,12 +23,12 @@ type expenseRepository struct {
 	dbConfig config.ExpenseTrackerDBConfig
 }
 
-func (r *expenseRepository) CreateExpense(expense dto.ExpenseResponse) (dto.ExpenseResponse, error) {
+func (r *expenseRepository) CreateExpense(expense dto.Expense) (dto.Expense, error) {
 	connUrl := getConnectionUrl(r.dbConfig)
 	conn, err := pgx.Connect(context.Background(), connUrl)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Unable to connect to database: %v\n", err)
-		return dto.ExpenseResponse{}, err
+		return dto.Expense{}, err
 	}
 	defer conn.Close(context.Background())
 	query := `insert into expense (amount, category_id, created) values (@amount, @categoryId, @created)`
@@ -41,29 +41,29 @@ func (r *expenseRepository) CreateExpense(expense dto.ExpenseResponse) (dto.Expe
 	_, err2 := conn.Exec(context.Background(), query, args)
 	if err2 != nil {
 		fmt.Fprintf(os.Stderr, "Error running insert: %v\n", err)
-		return dto.ExpenseResponse{}, err2
+		return dto.Expense{}, err2
 	}
 	return expense, nil
 
 }
 
-func (r *expenseRepository) GetAllExpenses() ([]dto.ExpenseResponse, error) {
+func (r *expenseRepository) GetAllExpenses() ([]dto.Expense, error) {
 	connUrl := getConnectionUrl(r.dbConfig)
 	conn, err := pgx.Connect(context.Background(), connUrl)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Unable to connect to database: %v\n", err)
-		return make([]dto.ExpenseResponse, 0), err
+		return make([]dto.Expense, 0), err
 	}
 	defer conn.Close(context.Background())
 	query := "select * from expense"
 	rows, err := conn.Query(context.Background(), query)
 	if err != nil {
-		return make([]dto.ExpenseResponse, 0), err
+		return make([]dto.Expense, 0), err
 	}
-	expenses, err := pgx.CollectRows(rows, pgx.RowToStructByPos[dto.ExpenseResponse])
+	expenses, err := pgx.CollectRows(rows, pgx.RowToStructByPos[dto.Expense])
 	if err != nil {
 		fmt.Printf("CollectRows error: %v", err)
-		return make([]dto.ExpenseResponse, 0), err
+		return make([]dto.Expense, 0), err
 	}
 	fmt.Println(expenses)
 	return expenses, nil
@@ -96,11 +96,11 @@ func (r *expenseRepository) GetExpenseById(id uint16) (dto.Expense, error) {
 
 	fmt.Printf("id : %d | amount : %f | category_id: %d | created: %s | modified: %s\n", expenseId, amount, categoryId, created, modified)
 	expense := dto.Expense{}
-	expense.SetId(id)
-	expense.SetAmount(amount)
-	expense.SetCategoryId(categoryId)
-	expense.SetCreated(created)
-	expense.SetModified(modified)
+	expense.Id = id
+	expense.Amount = amount
+	expense.Category_id = categoryId
+	expense.Created = created
+	expense.Modified = modified
 	return expense, nil
 }
 
@@ -122,12 +122,12 @@ func (r *expenseRepository) DeleteExpenseById(id uint16) error {
 	return nil
 }
 
-func (r *expenseRepository) UpdateExpense(expense dto.ExpenseResponse) (dto.ExpenseResponse, error) {
+func (r *expenseRepository) UpdateExpense(expense dto.Expense) (dto.Expense, error) {
 	connUrl := getConnectionUrl(r.dbConfig)
 	conn, err := pgx.Connect(context.Background(), connUrl)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Unable to connect to database: %v\n", err)
-		return dto.ExpenseResponse{}, err
+		return dto.Expense{}, err
 	}
 	defer conn.Close(context.Background())
 	query := `update expense set amount = @amount, category_id = @categoryId, modified = now()::timestamp where id = @id`
@@ -141,7 +141,7 @@ func (r *expenseRepository) UpdateExpense(expense dto.ExpenseResponse) (dto.Expe
 	_, err2 := conn.Exec(context.Background(), query, args)
 	if err2 != nil {
 		fmt.Fprintf(os.Stderr, "Error running update: %v\n", err2)
-		return dto.ExpenseResponse{}, err2
+		return dto.Expense{}, err2
 	}
 	return expense, nil
 }

@@ -1,17 +1,15 @@
 package test
 
 import (
-	"log/slog"
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"testing"
 
 	"github.com/Fausto4911/expensetracker/internal/handler"
 )
 
 func TestGetExpenseByIdHanlder(t *testing.T) {
-	app := NewTestApp()
+	app := handler.NewExpenseHandler()
 
 	idExistTest(app, t)
 
@@ -70,15 +68,4 @@ func idNotFoundTest(app *handler.ExpenseHandler, t *testing.T) {
 		t.Errorf("handler returned wrong status code: got %v want %v",
 			status, http.StatusNotFound)
 	}
-}
-
-func NewTestApp() *handler.ExpenseHandler {
-	app := &handler.ExpenseHandler{
-		Config: handler.Config{
-			Port: 8080,
-			Env:  "development",
-		},
-		Logger: slog.New(slog.NewTextHandler(os.Stdout, nil)),
-	}
-	return app
 }

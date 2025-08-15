@@ -3,10 +3,12 @@ package handler
 import (
 	"database/sql"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"io"
 	"log/slog"
 	"net/http"
+	"os"
 	"strconv"
 
 	"github.com/Fausto4911/expensetracker/internal/config"
@@ -28,6 +30,27 @@ type Config struct {
 type ExpenseHandler struct {
 	Config Config
 	Logger *slog.Logger
+}
+
+func NewExpenseHandler() *ExpenseHandler {
+	var cfg Config
+
+	// Read the value of the port and env command-line flags into the config struct. We
+	// default to using the port number 8080 and the environment "development" if no
+	// corresponding flags are provided.
+	flag.IntVar(&cfg.Port, "port", 8080, "API server port")
+	flag.StringVar(&cfg.Env, "env", "development", "Environment (development|staging|production)")
+	flag.Parse()
+
+	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
+
+	// Declare an instance of the ExpenseHandler struct, containing the config struct and
+	// the logger.
+	app := &ExpenseHandler{
+		Config: cfg,
+		Logger: logger,
+	}
+	return app
 }
 
 func (eh *ExpenseHandler) GetAllExpenses(w http.ResponseWriter, r *http.Request) {
@@ -87,8 +110,7 @@ func (eh *ExpenseHandler) GetExpenseByIdHanlder(w http.ResponseWriter, r *http.R
 		http.Error(w, "Error getting expense ", http.StatusInternalServerError)
 		return
 	}
-	expenseResponse := dto.BuildExpenseResponse(expense)
-	jsonData, err := json.Marshal(expenseResponse)
+	jsonData, err := json.Marshal(expense)
 	if err != nil {
 		eh.Logger.Error(err.Error())
 		http.Error(w, "Error marshalling JSON:", http.StatusInternalServerError)
@@ -120,23 +142,25 @@ func (eh *ExpenseHandler) CreateExpenseHandler(w http.ResponseWriter, r *http.Re
 	dbConfig := config.ExpenseTrackerDBConfig{DbName: "expensetracker", DbHost: "localhost", DbPort: "5440", DbUser: "user", DbPassword: "admin"}
 	repo := repository.NewExpenseRepository(dbConfig)
 	service := service.NewExpenseService(repo, dbConfig)
+	var err error
+	var expense dto.Expense
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
 		eh.Logger.Error(err.Error())
 		http.Error(w, "Error Reading body", http.StatusInternalServerError)
 		return
 	}
-	expense := dto.ExpenseResponse{}
-	err2 := json.Unmarshal(body, &expense)
-	if err2 != nil {
-		eh.Logger.Error(err2.Error())
+	expense = dto.Expense{}
+	err = json.Unmarshal(body, &expense)
+	if err != nil {
+		eh.Logger.Error(err.Error())
 		http.Error(w, "Error while Unmarshal body", http.StatusInternalServerError)
 		return
 	}
 
-	expense, err3 := service.CreateExpense(expense)
-	if err3 != nil {
-		eh.Logger.Error(err3.Error())
+	expense, err = service.CreateExpense(expense)
+	if err != nil {
+		eh.Logger.Error(err.Error())
 		http.Error(w, "Error while Creating Expense", http.StatusInternalServerError)
 		return
 	}
@@ -151,6 +175,7 @@ func (eh *ExpenseHandler) DeleteExpense(w http.ResponseWriter, r *http.Request) 
 	dbConfig := config.ExpenseTrackerDBConfig{DbName: "expensetracker", DbHost: "localhost", DbPort: "5440", DbUser: "user", DbPassword: "admin"}
 	repo := repository.NewExpenseRepository(dbConfig)
 	service := service.NewExpenseService(repo, dbConfig)
+	var err error
 
 	u, err := strconv.ParseUint(id, 10, 16)
 	if err != nil {
@@ -158,9 +183,9 @@ func (eh *ExpenseHandler) DeleteExpense(w http.ResponseWriter, r *http.Request) 
 		http.Error(w, "Error parsing ID ", http.StatusInternalServerError)
 		return
 	}
-	err2 := service.DeleteExpenseById(uint16(u))
+	err = service.DeleteExpenseById(uint16(u))
 	if err != nil {
-		eh.Logger.Error(err2.Error())
+		eh.Logger.Error(err.Error())
 		http.Error(w, "Error while Creating Expense", http.StatusInternalServerError)
 		return
 	}
@@ -173,6 +198,7 @@ func (eh *ExpenseHandler) UpdateExpense(w http.ResponseWriter, r *http.Request) 
 	dbConfig := config.ExpenseTrackerDBConfig{DbName: "expensetracker", DbHost: "localhost", DbPort: "5440", DbUser: "user", DbPassword: "admin"}
 	repo := repository.NewExpenseRepository(dbConfig)
 	service := service.NewExpenseService(repo, dbConfig)
+	var err error
 
 	u, err := strconv.ParseUint(id, 10, 16)
 	if err != nil {
@@ -188,18 +214,18 @@ func (eh *ExpenseHandler) UpdateExpense(w http.ResponseWriter, r *http.Request) 
 		http.Error(w, "Error Reading body", http.StatusInternalServerError)
 		return
 	}
-	expense := dto.ExpenseResponse{}
-	err2 := json.Unmarshal(body, &expense)
-	if err2 != nil {
-		eh.Logger.Error(err2.Error())
+	expense := dto.Expense{}
+	err = json.Unmarshal(body, &expense)
+	if err != nil {
+		eh.Logger.Error(err.Error())
 		http.Error(w, "Error while Unmarshal body", http.StatusInternalServerError)
 		return
 	}
 	expense.Id = uint16(u)
 
-	expense, err3 := service.UpdateExpense(expense)
-	if err3 != nil {
-		eh.Logger.Error(err3.Error())
+	expense, err = service.UpdateExpense(expense)
+	if err != nil {
+		eh.Logger.Error(err.Error())
 		http.Error(w, "Error while Updating Expense", http.StatusInternalServerError)
 		return
 	}
