@@ -14,6 +14,7 @@ func (eh *ExpenseHandler) Routes() *http.ServeMux {
 	mux.HandleFunc("POST /v1/expenses", eh.CreateExpenseHandler)
 	mux.HandleFunc("DELETE /v1/expenses/{id}", eh.DeleteExpense)
 	mux.HandleFunc("PUT /v1/expenses/{id}", eh.UpdateExpense)
+	mux.HandleFunc("POST /v1/category", eh.CreateCategory)
 
 	return mux
 }

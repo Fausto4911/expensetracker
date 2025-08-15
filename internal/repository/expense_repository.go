@@ -25,24 +25,32 @@ type expenseRepository struct {
 
 func (r *expenseRepository) CreateExpense(expense dto.Expense) (dto.Expense, error) {
 	connUrl := getConnectionUrl(r.dbConfig)
-	conn, err := pgx.Connect(context.Background(), connUrl)
+	var err error
+	var conn *pgx.Conn
+	conn, err = pgx.Connect(context.Background(), connUrl)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Unable to connect to database: %v\n", err)
 		return dto.Expense{}, err
 	}
 	defer conn.Close(context.Background())
-	query := `insert into expense (amount, category_id, created) values (@amount, @categoryId, @created)`
+	query := `insert into expense (amount, category_id, created) 
+	values (@amount, @categoryId, @created)
+	RETURNING id`
+
 	args := pgx.NamedArgs{
 		"amount":     expense.Amount,
 		"categoryId": expense.Category_id,
 		"created":    expense.Created,
 	}
 
-	_, err2 := conn.Exec(context.Background(), query, args)
-	if err2 != nil {
+	var insertedID int
+
+	err = conn.QueryRow(context.Background(), query, args).Scan(&insertedID)
+	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error running insert: %v\n", err)
-		return dto.Expense{}, err2
+		return dto.Expense{}, err
 	}
+	expense.Id = uint16(insertedID)
 	return expense, nil
 
 }

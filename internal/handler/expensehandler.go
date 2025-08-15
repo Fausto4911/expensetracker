@@ -20,20 +20,14 @@ import (
 
 const version = "1.0.0"
 
-// Define a config struct to hold all the configuration settings for our application.
-type Config struct {
-	Port int
-	Env  string
-}
-
 // Define an application struct to hold the dependencies for our HTTP handlers, helpers,and middleware.
 type ExpenseHandler struct {
-	Config Config
+	Config config.Config
 	Logger *slog.Logger
 }
 
 func NewExpenseHandler() *ExpenseHandler {
-	var cfg Config
+	var cfg config.Config
 
 	// Read the value of the port and env command-line flags into the config struct. We
 	// default to using the port number 8080 and the environment "development" if no
@@ -232,4 +226,55 @@ func (eh *ExpenseHandler) UpdateExpense(w http.ResponseWriter, r *http.Request) 
 	fmt.Printf("Expense :: ==> %s", expense)
 	fmt.Printf("%s", body)
 
+}
+
+func (eh *ExpenseHandler) CreateCategory(w http.ResponseWriter, r *http.Request) {
+	dbConfig := config.ExpenseTrackerDBConfig{DbName: "expensetracker", DbHost: "localhost", DbPort: "5440", DbUser: "user", DbPassword: "admin"}
+	repo := repository.NewCategoryRepository(dbConfig)
+	service := service.NewCategoryService(repo, dbConfig)
+
+	var err error
+	var category dto.Category
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		eh.Logger.Error(err.Error())
+		http.Error(w, "Error Reading body", http.StatusInternalServerError)
+		return
+	}
+	category = dto.Category{}
+	err = json.Unmarshal(body, &category)
+	if err != nil {
+		eh.Logger.Error(err.Error())
+		http.Error(w, "Error while Unmarshal body", http.StatusInternalServerError)
+		return
+	}
+
+	category, err = service.CreateCategory(category)
+
+	if err != nil {
+		eh.Logger.Error(err.Error())
+		http.Error(w, "Error while Creating Category", http.StatusInternalServerError)
+		return
+	}
+
+	//
+	jsonData, err := json.Marshal(category)
+	if err != nil {
+		eh.Logger.Error(err.Error())
+		http.Error(w, "Error marshalling JSON:", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	data, err := w.Write(jsonData)
+
+	if err != nil {
+		eh.Logger.Error(err.Error())
+		http.Error(w, "Error writing data:", http.StatusInternalServerError)
+		return
+	}
+	eh.Logger.Info("GetAllExpenses - ", slog.Int("data", data))
+
+	// Set the HTTP status code to 201 Created
+	w.WriteHeader(http.StatusCreated)
 }
